@@ -113,7 +113,6 @@ details ol{margin:.6rem 0 0;padding-left:1.3rem;display:grid;gap:.45rem;max-widt
       </div>
       <div class="toggles">
         <label><input type="checkbox" id="noise"> Messstreuung (wie im echten Versuch)</label>
-        <label><input type="checkbox" id="showE"> Energie E = m · g · h in Tabelle zeigen</label>
       </div>
       <button class="drop" id="drop">Fallen lassen</button>
       <p class="note" style="margin:0">Alle Fallkörper haben dieselbe Grundfläche (Ø 3 cm). Luftwiderstand wird vernachlässigt. Die Fallzeit läuft in Echtzeit.</p>
@@ -171,7 +170,7 @@ details ol{margin:.6rem 0 0;padding-left:1.3rem;display:grid;gap:.45rem;max-widt
         <li><strong>Masse variieren:</strong> Erde, h = 1,0 m fest. Alle 10 Massen fallen lassen. x-Achse „Masse“. Ergebnis als Je-desto-Satz formulieren, dann prüfen: Liegen die Punkte auf einer Ursprungsgeraden? Dann gilt d ~ m.</li>
         <li><strong>Höhe variieren:</strong> Erde, m = 500 g fest. Höhen 0,2 m bis 2,0 m. x-Achse „Fallhöhe“. Gilt d ~ h?</li>
         <li><strong>Planet variieren:</strong> m = 500 g und h = 1,0 m fest. Auf allen Himmelskörpern messen. x-Achse „Ortsfaktor“. Gilt d ~ g?</li>
-        <li><strong>Zusammenführen:</strong> Wenn die Eindrucktiefe ein Maß für die Energie ist (E ~ d), folgt E ~ m, E ~ h und E ~ g, also E ~ m · g · h. Zum Schluss die Energie-Spalte einblenden und vergleichen.</li>
+        <li><strong>Zusammenführen:</strong> Die Eindrucktiefe ist ein Maß für die Energie beim Aufprall. Fasse deine drei Ergebnisse zusammen: Wie hängt die Energie von m, h und g ab?</li>
       </ol>
     </details>
   </div>
@@ -205,7 +204,7 @@ PLANETS.forEach((p,i)=>{const b=document.createElement("button");b.className="op
 MASSES.forEach(m=>{const b=document.createElement("button");b.className="opt";b.id="ms"+m;b.textContent=m+" g";
  b.onclick=()=>{if(st.busy)return;st.m=m;resetDent();sync()};$("masses").append(b)});
 $("h").oninput=e=>{if(st.busy){e.target.value=st.h;return}st.h=+e.target.value;resetDent();sync()};
-$("showE").onchange=renderTable;$("xsel").onchange=drawChart;
+$("xsel").onchange=drawChart;
 $("drop").onclick=drop;
 $("clear").onclick=()=>{rows=[];renderTable();drawChart()};
 $("copy").onclick=copyCSV;
@@ -299,7 +298,7 @@ function drop(){
 
 // ---------- Tabelle ----------
 function renderTable(){
- const sE=$("showE").checked;
+ const sE=false;
  $("thead").innerHTML=`<th>Nr.</th><th>Ort</th><th>g in N/kg</th><th>m in kg</th><th>h in m</th><th>d in mm</th>${sE?"<th>E in J</th>":""}<th></th>`;
  const tb=$("tbody");
  if(!rows.length){tb.innerHTML=`<tr><td colspan="${sE?8:7}" class="empty" style="text-align:center">Noch keine Messungen. Wähle Ort, Masse und Höhe und lass den Körper fallen.</td></tr>`;return}
@@ -309,7 +308,7 @@ function renderTable(){
  const wrap=tb.closest(".tbl");wrap.scrollTop=wrap.scrollHeight;
 }
 function copyCSV(){
- const sE=$("showE").checked;
+ const sE=false;
  const lines=["Nr.;Ort;g in N/kg;m in kg;h in m;d in mm"+(sE?";E in J":"")].concat(rows.map((r,i)=>{const P=PLANETS[r.p];
   return [i+1,P.n,fmt(P.g,2),fmt(r.m/1000,1),fmt(r.h,1),fmt(r.d,2)].concat(sE?[fmt(r.m/1000*P.g*r.h,3)]:[]).join(";")}));
  const txt=lines.join("\n");const ta=$("csv");
