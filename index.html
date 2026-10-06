@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knete-Fallversuch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+[hidden]{display:none!important}
+img{max-width:100%}
+/* Layout: Laborplatz – links Versuchsaufbau (Steuerung + Fallszene), darunter Messprotokoll und Auswertungsdiagramm */
+:root{
+  --bg:#F2F4F6; --panel:#FFFFFF; --ink:#18222D; --muted:#5B6773; --line:#D5DBE1;
+  --accent:#2E63C9; --accent-ink:#FFFFFF; --clay:#D9733A; --clay-dark:#A9531F;
+  --metal:#8C96A3; --metal-light:#C9D0D8; --good:#1E8A57; --chip:#E7ECF2;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12171D; --panel:#1B232C; --ink:#E6EBF0; --muted:#97A3AF; --line:#2E3945;
+  --accent:#6E9BF0; --accent-ink:#0E1620; --clay:#E58A50; --clay-dark:#B9632F;
+  --metal:#7D8794; --metal-light:#AEB7C2; --good:#4CC28A; --chip:#26303B; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12171D; --panel:#1B232C; --ink:#E6EBF0; --muted:#97A3AF; --line:#2E3945;
+  --accent:#6E9BF0; --accent-ink:#0E1620; --clay:#E58A50; --clay-dark:#B9632F;
+  --metal:#7D8794; --metal-light:#AEB7C2; --good:#4CC28A; --chip:#26303B; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 40px;display:grid;gap:18px}
+header h1{font-family:var(--f-display);font-weight:800;font-size:clamp(1.6rem,3.2vw,2.3rem);margin:0;letter-spacing:-.01em;text-wrap:balance}
+header p{margin:.3rem 0 0;color:var(--muted);max-width:68ch}
+.formula{font-family:var(--f-mono);font-size:.85em;background:var(--chip);padding:.05em .35em;border-radius:4px}
+.lab{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:820px){.lab{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.ctl{display:grid;gap:16px}
+.label{font-family:var(--f-display);font-weight:700;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.label b{font-family:var(--f-mono);font-size:.95rem;color:var(--ink);letter-spacing:0;text-transform:none}
+.grid-btn{display:grid;gap:6px}
+.planets{grid-template-columns:repeat(2,minmax(0,1fr))}
+.masses{grid-template-columns:repeat(5,minmax(0,1fr))}
+.opt{appearance:none;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:7px;padding:6px 8px;font:inherit;font-size:.86rem;cursor:pointer;text-align:left;display:flex;justify-content:space-between;gap:6px;align-items:baseline}
+.masses .opt{justify-content:center;font-family:var(--f-mono);font-size:.8rem;padding:7px 2px}
+.opt small{font-family:var(--f-mono);color:var(--muted);font-size:.74rem}
+.opt[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.opt[aria-pressed="true"] small{color:var(--accent-ink);opacity:.85}
+.opt:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.toggles{display:grid;gap:6px;font-size:.9rem}
+.toggles label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.toggles input{accent-color:var(--accent);width:16px;height:16px}
+.drop{appearance:none;border:0;background:var(--clay);color:#fff;font-family:var(--f-display);font-weight:800;font-size:1.05rem;letter-spacing:.02em;padding:12px;border-radius:8px;cursor:pointer;width:100%}
+.drop:disabled{opacity:.55;cursor:wait}
+.scene-wrap{display:grid;gap:12px}
+.scene{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+canvas{display:block;width:100%}
+#scene{height:440px}
+.gauge{position:absolute;right:12px;top:12px;background:#1d2530;color:#E9F1FA;border-radius:8px;padding:8px 12px;font-family:var(--f-mono);box-shadow:0 2px 10px rgba(0,0,0,.25);min-width:150px}
+.gauge .t{font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;opacity:.7}
+.gauge .v{font-size:1.7rem;font-weight:700;font-variant-numeric:tabular-nums;color:#9BF0B9;line-height:1.15}
+.gauge .v span{font-size:.9rem;color:#E9F1FA;opacity:.8;margin-left:4px}
+.gauge .s{font-size:.7rem;opacity:.75}
+.note{font-size:.8rem;color:var(--muted)}
+.two{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.two{grid-template-columns:minmax(0,1fr)}}
+h2{font-family:var(--f-display);font-weight:700;font-size:1.15rem;margin:0}
+.bar{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin-bottom:10px}
+.btns{display:flex;flex-wrap:wrap;gap:6px}
+.small{appearance:none;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:.82rem;padding:5px 10px;border-radius:6px;cursor:pointer}
+.tbl{overflow-x:auto;max-height:380px;overflow-y:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:.86rem;font-variant-numeric:tabular-nums}
+th,td{padding:6px 9px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{position:sticky;top:0;background:var(--panel);font-family:var(--f-display);font-weight:700;font-size:.76rem;letter-spacing:.04em;color:var(--muted);text-align:right}
+th:nth-child(2),td:nth-child(2){text-align:left}
+td.mono{font-family:var(--f-mono);font-size:.82rem}
+tr.ex td{color:var(--muted)}
+.tag{font-size:.66rem;background:var(--chip);border-radius:4px;padding:1px 5px;margin-left:5px;font-family:var(--f-display);letter-spacing:.04em;text-transform:uppercase}
+.del{appearance:none;border:0;background:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:0 4px}
+.empty{padding:22px;text-align:center;color:var(--muted)}
+select{font:inherit;font-size:.86rem;padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+#chart{height:300px}
+.fit{font-family:var(--f-mono);font-size:.85rem;margin-top:8px;min-height:1.4em}
+.filter{font-size:.82rem;color:var(--muted);margin-top:4px}
+details{font-size:.92rem}
+details summary{cursor:pointer;font-family:var(--f-display);font-weight:700}
+details ol{margin:.6rem 0 0;padding-left:1.3rem;display:grid;gap:.45rem;max-width:75ch}
+.csv{width:100%;height:90px;margin-top:8px;font-family:var(--f-mono);font-size:.78rem;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Knete-Fallversuch</h1>
+    <p>Lass einen Fallkörper auf einen Knetblock fallen und miss, wie tief er einsinkt. Je mehr Energie der Körper beim Aufprall hat, desto tiefer ist die Delle. Ändere immer nur <em>eine</em> Größe: Masse, Fallhöhe oder Planet.</p>
+  </header>
+
+  <section class="lab">
+    <div class="panel ctl" aria-label="Versuchsaufbau">
+      <div>
+        <div class="label">Ort <b id="gOut">g = 9,81 N/kg</b></div>
+        <div class="grid-btn planets" id="planets"></div>
+      </div>
+      <div>
+        <div class="label">Masse <b id="mOut">500 g</b></div>
+        <div class="grid-btn masses" id="masses"></div>
+      </div>
+      <div>
+        <div class="label"><label for="h">Fallhöhe</label> <b id="hOut">1,0 m</b></div>
+        <input id="h" type="range" min="0.1" max="2" step="0.1" value="1">
+      </div>
+      <div class="toggles">
+        <label><input type="checkbox" id="noise"> Messstreuung (wie im echten Versuch)</label>
+        <label><input type="checkbox" id="showE"> Energie E = m · g · h in Tabelle zeigen</label>
+      </div>
+      <button class="drop" id="drop">Fallen lassen</button>
+      <p class="note" style="margin:0">Alle Fallkörper haben dieselbe Grundfläche (Ø 3 cm). Luftwiderstand wird vernachlässigt. Die Fallzeit läuft in Echtzeit.</p>
+    </div>
+
+    <div class="scene-wrap">
+      <div class="scene">
+        <canvas id="scene" aria-label="Fallszene: Fallkörper über einem Knetblock"></canvas>
+        <div class="gauge" aria-live="polite">
+          <div class="t">Eindrucktiefe d</div>
+          <div class="v" id="dOut">–<span>mm</span></div>
+          <div class="s" id="tOut">Fallzeit –</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="two">
+    <div class="panel">
+      <div class="bar">
+        <h2>Messprotokoll</h2>
+        <div class="btns">
+          <button class="small" id="copy">Als Tabelle kopieren</button>
+          <button class="small" id="clear">Alle löschen</button>
+        </div>
+      </div>
+      <div class="tbl"><table>
+        <thead><tr id="thead"></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table></div>
+      <textarea class="csv" id="csv" hidden readonly aria-label="Messwerte zum Kopieren"></textarea>
+    </div>
+
+    <div class="panel">
+      <div class="bar">
+        <h2>Auswertung</h2>
+        <label style="font-size:.86rem">x-Achse:
+          <select id="xsel">
+            <option value="m">Masse m</option>
+            <option value="h">Fallhöhe h</option>
+            <option value="g">Ortsfaktor g</option>
+          </select>
+        </label>
+      </div>
+      <canvas id="chart" aria-label="Diagramm Eindrucktiefe gegen gewählte Größe"></canvas>
+      <div class="filter" id="filter"></div>
+      <div class="fit" id="fit"></div>
+    </div>
+  </section>
+
+  <div class="panel">
+    <details>
+      <summary>Vorschlag für den Ablauf (3 Messreihen)</summary>
+      <ol>
+        <li><strong>Masse variieren:</strong> Erde, h = 1,0 m fest. Alle 10 Massen fallen lassen. x-Achse „Masse“. Ergebnis als Je-desto-Satz formulieren, dann prüfen: Liegen die Punkte auf einer Ursprungsgeraden? Dann gilt d ~ m.</li>
+        <li><strong>Höhe variieren:</strong> Erde, m = 500 g fest. Höhen 0,2 m bis 2,0 m. x-Achse „Fallhöhe“. Gilt d ~ h?</li>
+        <li><strong>Planet variieren:</strong> m = 500 g und h = 1,0 m fest. Auf allen Himmelskörpern messen. x-Achse „Ortsfaktor“. Gilt d ~ g?</li>
+        <li><strong>Zusammenführen:</strong> Wenn die Eindrucktiefe ein Maß für die Energie ist (E ~ d), folgt E ~ m, E ~ h und E ~ g, also E ~ m · g · h. Zum Schluss die Energie-Spalte einblenden und vergleichen.</li>
+      </ol>
+    </details>
+  </div>
+</div>
+
+<script>
+const PLANETS=[
+ {n:"Mond",g:1.62,sky:["#05070c","#151a26"],ground:"#7d7f86"},
+ {n:"Merkur",g:3.70,sky:["#0c0b0b","#2a2523"],ground:"#8a7f76"},
+ {n:"Mars",g:3.71,sky:["#c98b67","#e6b48f"],ground:"#a4532e"},
+ {n:"Venus",g:8.87,sky:["#d9b65e","#f0dc9e"],ground:"#9c7a3a"},
+ {n:"Erde",g:9.81,sky:["#6fa8e8","#cfe5fb"],ground:"#5f8f45"},
+ {n:"Saturn",g:10.44,sky:["#cdb37a","#efe2b8"],ground:"#a88f58"},
+ {n:"Neptun",g:11.15,sky:["#2f55b8","#7fa3e8"],ground:"#3c4f8c"},
+ {n:"Jupiter",g:24.79,sky:["#b9814d","#e9c79c"],ground:"#8a5a33"}
+];
+const MASSES=[100,200,300,400,500,600,700,800,900,1000];
+const F_KNETE=800; // N – konstante Widerstandskraft der Knete (Modellannahme)
+const st={p:4,m:500,h:1.0,busy:false,y:null,dent:0,dVis:0};
+let rows=[];
+const fmt=(v,d)=>v.toLocaleString("de-DE",{minimumFractionDigits:d,maximumFractionDigits:d});
+const $=id=>document.getElementById(id);
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Beispielreihe
+[200,400,600,800,1000].forEach(m=>{const E=m/1000*9.81*1;rows.push({p:4,m,h:1,d:E/F_KNETE*1000,ex:true})});
+
+// Buttons
+PLANETS.forEach((p,i)=>{const b=document.createElement("button");b.className="opt";b.id="pl"+i;
+ b.innerHTML=`${p.n}<small>${fmt(p.g,2)}</small>`;b.onclick=()=>{if(st.busy)return;st.p=i;resetDent();sync()};$("planets").append(b)});
+MASSES.forEach(m=>{const b=document.createElement("button");b.className="opt";b.id="ms"+m;b.textContent=m+" g";
+ b.onclick=()=>{if(st.busy)return;st.m=m;resetDent();sync()};$("masses").append(b)});
+$("h").oninput=e=>{if(st.busy){e.target.value=st.h;return}st.h=+e.target.value;resetDent();sync()};
+$("showE").onchange=renderTable;$("xsel").onchange=drawChart;
+$("drop").onclick=drop;
+$("clear").onclick=()=>{rows=[];renderTable();drawChart()};
+$("copy").onclick=copyCSV;
+
+function resetDent(){st.y=null;st.dent=0;$("dOut").innerHTML='–<span>mm</span>';$("tOut").textContent="Fallzeit –"}
+function sync(){
+ PLANETS.forEach((p,i)=>$("pl"+i).setAttribute("aria-pressed",i===st.p));
+ MASSES.forEach(m=>$("ms"+m).setAttribute("aria-pressed",m===st.m));
+ $("gOut").textContent="g = "+fmt(PLANETS[st.p].g,2)+" N/kg";
+ $("mOut").textContent=st.m+" g";$("hOut").textContent=fmt(st.h,1)+" m";
+ drawScene();drawChart();
+}
+
+// ---------- Szene ----------
+const sc=$("scene"),cx=sc.getContext("2d");
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function fit(c){const r=c.getBoundingClientRect(),dpr=devicePixelRatio||1;c.width=Math.round(r.width*dpr);c.height=Math.round(r.height*dpr);c.getContext("2d").setTransform(dpr,0,0,dpr,0,0);return r}
+let S={};
+function geom(){const r=sc.getBoundingClientRect();const W=r.width,H=r.height;
+ const clayTop=H-95,top=34;return{W,H,clayTop,top,pxm:(clayTop-top-60)/2,cxm:W*0.55,bw:44}}
+function massH(m){return 14+m*0.034}
+function drawScene(){
+ fit(sc);const g=geom();S=g;const P=PLANETS[st.p];const{W,H,clayTop,top,pxm,cxm,bw}=g;
+ const grd=cx.createLinearGradient(0,0,0,H);grd.addColorStop(0,P.sky[0]);grd.addColorStop(1,P.sky[1]);
+ cx.fillStyle=grd;cx.fillRect(0,0,W,H);
+ if(st.p<=1){cx.fillStyle="rgba(255,255,255,.7)";for(let i=0;i<40;i++){const x=(i*97.3)%W,y=(i*53.7)%(clayTop-40);cx.fillRect(x,y,1.2,1.2)}}
+ // Boden + Tisch
+ const groundY=H-40;cx.fillStyle=P.ground;cx.fillRect(0,groundY,W,40);
+ const dark=(st.p<=1);const tickCol=dark?"rgba(255,255,255,.85)":"rgba(15,25,35,.85)";
+ // Höhenskala
+ const sx=Math.min(70,W*0.12);cx.strokeStyle=tickCol;cx.fillStyle=tickCol;cx.lineWidth=1.5;
+ cx.beginPath();cx.moveTo(sx,clayTop);cx.lineTo(sx,clayTop-2*pxm);cx.stroke();
+ cx.font="12px "+css("--f-mono");cx.textAlign="right";cx.textBaseline="middle";
+ for(let i=0;i<=20;i++){const y=clayTop-i*0.1*pxm;const big=i%5===0;cx.beginPath();cx.moveTo(sx,y);cx.lineTo(sx+(big?10:5),y);cx.stroke();
+  if(big)cx.fillText(fmt(i/10,1)+" m",sx-6,y)}
+ // Markierung gewählte Höhe
+ const hy=clayTop-st.h*pxm;cx.setLineDash([5,4]);cx.beginPath();cx.moveTo(sx+12,hy);cx.lineTo(cxm-bw/2-6,hy);cx.stroke();cx.setLineDash([]);
+ // Knetblock
+ const kw=Math.min(190,W*0.42),kx=cxm-kw/2,kh=groundY-clayTop;
+ const clay=css("--clay"),clayD=css("--clay-dark");
+ cx.fillStyle=clay;
+ const dv=st.dVis;cx.beginPath();
+ cx.moveTo(kx,groundY);cx.lineTo(kx,clayTop+4);cx.quadraticCurveTo(kx,clayTop,kx+4,clayTop);
+ if(dv>0){const bulge=Math.min(6,dv*0.3);
+  cx.lineTo(cxm-bw/2-14,clayTop);cx.quadraticCurveTo(cxm-bw/2-6,clayTop-bulge,cxm-bw/2,clayTop);
+  cx.lineTo(cxm-bw/2,clayTop+dv);cx.lineTo(cxm+bw/2,clayTop+dv);cx.lineTo(cxm+bw/2,clayTop);
+  cx.quadraticCurveTo(cxm+bw/2+6,clayTop-bulge,cxm+bw/2+14,clayTop)}
+ cx.lineTo(kx+kw-4,clayTop);cx.quadraticCurveTo(kx+kw,clayTop,kx+kw,clayTop+4);cx.lineTo(kx+kw,groundY);cx.closePath();cx.fill();
+ cx.strokeStyle=clayD;cx.lineWidth=1.5;cx.stroke();
+ // Knete-Textur
+ cx.strokeStyle="rgba(0,0,0,.08)";cx.lineWidth=1;for(let i=1;i<4;i++){cx.beginPath();cx.moveTo(kx+6,clayTop+i*kh/4+4);cx.bezierCurveTo(kx+kw*0.3,clayTop+i*kh/4-2,kx+kw*0.7,clayTop+i*kh/4+8,kx+kw-6,clayTop+i*kh/4);cx.stroke()}
+ cx.fillStyle="rgba(255,255,255,.9)";cx.font="600 12px "+css("--f-body");cx.textAlign="center";cx.fillText("Knete",cxm,groundY-14);
+ // Fallkörper
+ const mh=massH(st.m);const yb=st.y===null?hy:st.y; // Unterkante
+ const mx=cxm-bw/2,my=yb-mh;
+ const mg=cx.createLinearGradient(mx,0,mx+bw,0);mg.addColorStop(0,"#7a828c");mg.addColorStop(.35,"#dfe4ea");mg.addColorStop(1,"#6b737d");
+ cx.fillStyle=mg;cx.fillRect(mx,my,bw,mh);cx.strokeStyle="#4a525c";cx.lineWidth=1;cx.strokeRect(mx+.5,my+.5,bw-1,mh-1);
+ cx.fillStyle="#1d2530";cx.font="700 11px "+css("--f-mono");cx.textAlign="center";cx.textBaseline="middle";
+ if(mh>=18)cx.fillText(st.m>=1000?"1 kg":st.m+" g",cxm,my+mh/2);
+ // Haken
+ cx.strokeStyle="#4a525c";cx.lineWidth=2.5;cx.beginPath();cx.arc(cxm,my-6,5,Math.PI*0.15,Math.PI*1.85);cx.stroke();
+ // Hinweis
+ cx.textAlign="left";cx.textBaseline="alphabetic";cx.fillStyle=tickCol;cx.font="11px "+css("--f-body");
+ cx.fillText(PLANETS[st.p].n+" · Fallkörper und Delle vergrößert, nicht maßstäblich",12,H-50);
+}
+
+// ---------- Fallen ----------
+function drop(){
+ if(st.busy)return;st.busy=true;$("drop").disabled=true;
+ const P=PLANETS[st.p];const m=st.m/1000,h=st.h,g=P.g;
+ let E=m*g*h;let d=E/F_KNETE*1000; // mm
+ if($("noise").checked){d*=1+(Math.random()*2-1)*0.06+ (Math.random()-.5)*0.02;d=Math.max(0,d+(Math.random()-.5)*0.04)}
+ const tFall=Math.sqrt(2*h/g);
+ st.dVis=0;const g0=geom();const y0=g0.clayTop-h*g0.pxm,y1=g0.clayTop;
+ const dVisTarget=Math.min(48,3+d*0.75);
+ $("dOut").innerHTML='…<span>mm</span>';$("tOut").textContent="Fallzeit "+fmt(tFall,2)+" s";
+ const finish=()=>{
+  st.y=y1+dVisTarget;st.dVis=dVisTarget;drawScene();
+  $("dOut").innerHTML=fmt(d,2)+'<span>mm</span>';
+  rows.push({p:st.p,m:st.m,h:st.h,d});renderTable();drawChart();
+  st.busy=false;$("drop").disabled=false;
+ };
+ if(reduce){finish();return}
+ const t0=performance.now();
+ function step(now){const t=(now-t0)/1000;
+  if(t<tFall){const s=0.5*g*t*t;st.y=y0+s*g0.pxm;st.dVis=0;drawScene();requestAnimationFrame(step)}
+  else{const k=Math.min(1,(t-tFall)/0.12);st.y=y1+dVisTarget*k;st.dVis=dVisTarget*k;drawScene();
+   if(k<1)requestAnimationFrame(step);else finish()}}
+ requestAnimationFrame(step);
+}
+
+// ---------- Tabelle ----------
+function renderTable(){
+ const sE=$("showE").checked;
+ $("thead").innerHTML=`<th>Nr.</th><th>Ort</th><th>g in N/kg</th><th>m in kg</th><th>h in m</th><th>d in mm</th>${sE?"<th>E in J</th>":""}<th></th>`;
+ const tb=$("tbody");
+ if(!rows.length){tb.innerHTML=`<tr><td colspan="${sE?8:7}" class="empty" style="text-align:center">Noch keine Messungen. Wähle Ort, Masse und Höhe und lass den Körper fallen.</td></tr>`;return}
+ tb.innerHTML=rows.map((r,i)=>{const P=PLANETS[r.p];const E=r.m/1000*P.g*r.h;
+  return `<tr class="${r.ex?"ex":""}"><td>${i+1}</td><td>${P.n}${r.ex?'<span class="tag">Beispiel</span>':""}</td><td class="mono">${fmt(P.g,2)}</td><td class="mono">${fmt(r.m/1000,1)}</td><td class="mono">${fmt(r.h,1)}</td><td class="mono"><strong>${fmt(r.d,2)}</strong></td>${sE?`<td class="mono">${fmt(E,3)}</td>`:""}<td><button class="del" data-i="${i}" aria-label="Messung ${i+1} löschen">×</button></td></tr>`}).join("");
+ tb.querySelectorAll(".del").forEach(b=>b.onclick=()=>{rows.splice(+b.dataset.i,1);renderTable();drawChart()});
+ const wrap=tb.closest(".tbl");wrap.scrollTop=wrap.scrollHeight;
+}
+function copyCSV(){
+ const sE=$("showE").checked;
+ const lines=["Nr.;Ort;g in N/kg;m in kg;h in m;d in mm"+(sE?";E in J":"")].concat(rows.map((r,i)=>{const P=PLANETS[r.p];
+  return [i+1,P.n,fmt(P.g,2),fmt(r.m/1000,1),fmt(r.h,1),fmt(r.d,2)].concat(sE?[fmt(r.m/1000*P.g*r.h,3)]:[]).join(";")}));
+ const txt=lines.join("\n");const ta=$("csv");
+ const fallback=()=>{ta.hidden=false;ta.value=txt;ta.focus();ta.select()};
+ try{navigator.clipboard.writeText(txt).then(()=>{$("copy").textContent="Kopiert";setTimeout(()=>$("copy").textContent="Als Tabelle kopieren",1500)},fallback)}catch(e){fallback()}
+}
+
+// ---------- Diagramm ----------
+const ch=$("chart"),cc=ch.getContext("2d");
+function nice(max){if(max<=0)return 1;const e=Math.pow(10,Math.floor(Math.log10(max)));const f=max/e;return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*e}
+function drawChart(){
+ const r=fit(ch);const W=r.width,H=r.height;const x=$("xsel").value;const P=PLANETS[st.p];
+ let pts=[],desc="",xl="",unit="";
+ if(x==="m"){pts=rows.filter(q=>q.p===st.p&&Math.abs(q.h-st.h)<1e-9).map(q=>[q.m/1000,q.d]);desc=`Zeigt Messungen mit h = ${fmt(st.h,1)} m auf ${({Mond:"dem Mond",Merkur:"dem Merkur",Mars:"dem Mars",Venus:"der Venus",Erde:"der Erde",Saturn:"dem Saturn",Neptun:"dem Neptun",Jupiter:"dem Jupiter"})[P.n]} (g = ${fmt(P.g,2)} N/kg).`;xl="m in kg"}
+ if(x==="h"){pts=rows.filter(q=>q.p===st.p&&q.m===st.m).map(q=>[q.h,q.d]);desc=`Zeigt Messungen mit m = ${st.m} g, Ort: ${P.n}.`;xl="h in m"}
+ if(x==="g"){pts=rows.filter(q=>q.m===st.m&&Math.abs(q.h-st.h)<1e-9).map(q=>[PLANETS[q.p].g,q.d]);desc=`Zeigt Messungen mit m = ${st.m} g und h = ${fmt(st.h,1)} m (alle Orte).`;xl="g in N/kg"}
+ $("filter").textContent=desc+" Die anderen beiden Größen stellst du oben ein.";
+ const ink=css("--ink"),muted=css("--muted"),line=css("--line"),acc=css("--accent"),clay=css("--clay");
+ cc.clearRect(0,0,W,H);
+ const L=48,R=14,T=12,B=40,pw=W-L-R,ph=H-T-B;
+ const xmax=nice(Math.max(x==="m"?1:x==="h"?2:25,...pts.map(p=>p[0]))*1.0);
+ const ymax=nice(Math.max(0.1,...pts.map(p=>p[1]))*1.1);
+ const X=v=>L+v/xmax*pw,Y=v=>T+ph-v/ymax*ph;
+ cc.font="11px "+css("--f-mono");cc.lineWidth=1;
+ for(let i=0;i<=5;i++){const yv=ymax*i/5,yy=Y(yv);cc.strokeStyle=line;cc.beginPath();cc.moveTo(L,yy);cc.lineTo(L+pw,yy);cc.stroke();
+  cc.fillStyle=muted;cc.textAlign="right";cc.textBaseline="middle";cc.fillText(fmt(yv,ymax<1?2:ymax<10?1:0),L-6,yy)}
+ for(let i=0;i<=5;i++){const xv=xmax*i/5,xx=X(xv);cc.strokeStyle=line;cc.beginPath();cc.moveTo(xx,T+ph);cc.lineTo(xx,T+ph+4);cc.stroke();
+  cc.fillStyle=muted;cc.textAlign="center";cc.textBaseline="top";cc.fillText(fmt(xv,xmax<=2?1:0),xx,T+ph+6)}
+ cc.strokeStyle=ink;cc.beginPath();cc.moveTo(L,T);cc.lineTo(L,T+ph);cc.lineTo(L+pw,T+ph);cc.stroke();
+ cc.fillStyle=ink;cc.font="600 12px "+css("--f-body");cc.textAlign="right";cc.textBaseline="bottom";cc.fillText(xl,L+pw,H-2);
+ cc.save();cc.translate(12,T);cc.textAlign="right";cc.rotate(-Math.PI/2);cc.textBaseline="top";cc.fillText("d in mm",0,0);cc.restore();
+ if(pts.length===0){cc.fillStyle=muted;cc.textAlign="center";cc.textBaseline="middle";cc.font="13px "+css("--f-body");cc.fillText("Für diese Einstellung gibt es noch keine Messungen.",L+pw/2,T+ph/2);$("fit").textContent="";return}
+ let k=null;
+ if(pts.length>=2){const sxy=pts.reduce((a,p)=>a+p[0]*p[1],0),sxx=pts.reduce((a,p)=>a+p[0]*p[0],0);k=sxy/sxx;
+  cc.strokeStyle=acc;cc.lineWidth=2;cc.setLineDash([6,4]);cc.beginPath();cc.moveTo(X(0),Y(0));const xe=Math.min(xmax,ymax/k);cc.lineTo(X(xe),Y(k*xe));cc.stroke();cc.setLineDash([])}
+ pts.forEach(p=>{cc.fillStyle=clay;cc.strokeStyle=ink;cc.lineWidth=1.2;cc.beginPath();cc.arc(X(p[0]),Y(p[1]),5,0,Math.PI*2);cc.fill();cc.stroke()});
+ const sym=x==="m"?"m":x==="h"?"h":"g";const u=x==="m"?"mm/kg":x==="h"?"mm/m":"mm/(N/kg)";
+ $("fit").textContent=k?`Ursprungsgerade: d ≈ ${fmt(k,k<1?3:2)} ${u} · ${sym}`:"Mindestens 2 Messpunkte für eine Ausgleichsgerade.";
+}
+addEventListener("resize",()=>{drawScene();drawChart()});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{drawScene();drawChart()});
+new MutationObserver(()=>{drawScene();drawChart()}).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+document.fonts&&document.fonts.ready.then(()=>{drawScene();drawChart()});
+renderTable();sync();
+</script>
+</body>
+</html>
